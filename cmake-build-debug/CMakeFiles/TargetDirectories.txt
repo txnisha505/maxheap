@@ -1,0 +1,3 @@
+C:/Users/krist/gitSkole/maxheap/cmake-build-debug/CMakeFiles/maxheap.dir
+C:/Users/krist/gitSkole/maxheap/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/krist/gitSkole/maxheap/cmake-build-debug/CMakeFiles/rebuild_cache.dir
