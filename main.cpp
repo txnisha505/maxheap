@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <limits> // for std::numeric_limits: provides information about properties of a data type
+#include <unordered_set>
 
 
 
@@ -14,8 +15,11 @@ struct PrintJob {
 };
 
 
+std::unordered_set<std::string> jobNames;
+
+
 // function for restoring max-heap properties on a subtree rooted at i based on priority.
-void heapify(std::vector<PrintJob> &jobs, int &n, int parent)  {
+void heapify(std::vector<PrintJob> &jobs, int n, int parent)  {
     // start by assuming the parent has the highest priority
     int largest = parent;
     int left, right;
@@ -40,7 +44,7 @@ void heapify(std::vector<PrintJob> &jobs, int &n, int parent)  {
         // recursively heapify the affected subtree to ensure subtree rooted at 'largest' is also a heap
         heapify(jobs, n, largest);
     }
-}           // QQQ should int n/&n
+}
 
 
 // function for building a heap from an unsorted vector of PrintJob objects
@@ -75,13 +79,18 @@ void heapifyInsertOperation(std::vector<PrintJob> &jobs, int i) {
 
 
 bool insertNode(std::vector<PrintJob> &jobs, const std::string &name, const int priority) {
+    if (jobNames.find(name) != jobNames.end()) {
+        std::cout << "Error: A job with the name \"" << name << "\" already exists." << std::endl;
+        return false;
+    }
 
     // insert new job at bottom of heap
     jobs.emplace_back(name, priority);
-    jobNames.emplace_back(name)
+    jobNames.insert(name);
 
     // call function to restore heap properties, starting from newly inserted node at index = jobs.size() - 1
     heapifyInsertOperation(jobs, static_cast<int>(jobs.size() - 1));
+    return true;
 }
 
 
@@ -95,7 +104,33 @@ void processHighestPriorityJob(std::vector<PrintJob> &jobs) {
     std::cout << "Processing job: " << highestPriorityJob.name << "Priority: " << highestPriorityJob.priority << std::endl;
 }
 
+// function for editing an existing job's priority
+void updateJobPriority(std::vector<PrintJob> &jobs, const std::string &name, int new_priority) {
+    // set index to a position that I define as not found
+    int index = -1;
+    for (int i = 0; i < jobs.size(); i++) {
+        if (jobs[i].name == name) {
 
+            // if found, set index to position of job object to edit
+            index = i;
+            break;
+        }
+    }
+    if (index == -1) {
+        std::cout << "Error: No job found with name \"" << name << "\"." << std::endl;
+        return;
+    }
+
+    int old_priority = jobs[index].priority;
+    jobs[index].priority = new_priority;
+
+    if (new_priority > old_priority) {
+        heapifyInsertOperation(jobs, index);
+    } else {
+        heapify(jobs, static_cast<int>(jobs.size()), index);
+    }
+    std::cout << "Priority of \"" << name << "\" is updated to " << new_priority << "." << std::endl;
+}
 
 
 // function to display jobs
@@ -123,17 +158,19 @@ void heapSort(std::vector<PrintJob> &jobs, int &n) {
 
 
 void displayMenu() {
-    std::cout << "This program prints the jobs in their own respective priority." << std::endl;
-    std::cout << "You will be prompted to input a job. First, the name of the job, then corresponding priority." << std::endl;
-    std::cout << "Priority should be a whole number, and the higher number, the higher priority." << std::endl;
-    std::cout << "Some text here." << std::endl;
+    std::cout << "Print Job Program Menu:" << std::endl;
+    std::cout << "1. Insert print job" << std::endl;
+    std::cout << "2. Display next print job" << std::endl;
+    std::cout << "3. Process next print job" << std::endl;
+    std::cout << "4. Update print job priority" << std::endl;
+    std::cout << "5. Display all print jobs" << std::endl;
+    std::cout << "6. Exit program" << std::endl;
 }
 
 
 
 int main(){
     std::vector<PrintJob> jobs;
-    std::unordered_set<std::string> jobNames; // why an unordered set
     int choice;
 
     do {
@@ -153,12 +190,52 @@ int main(){
                 std::cin >> priority;
                 // std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-                if (insertNode(jobs, name, priority))
-
+                if (insertNode(jobs, name, priority)) {
+                    std::cout << "Job \"" << name << "\" succesfully added." << std::endl;
+                    if (!jobs.empty()) {
+                        // display next print job with highest priority
+                        std::cout << "Next job to process: " << jobs.front().name <<
+                        " Priority: " << jobs.front().priority << std::endl;
+                    }
+                }
+                break;
             }
-        }
-    }
+            case 2: {
+                if (!jobs.empty()) {
+                    std::cout << "Next job to process: " << jobs.front().name
+                              << " Priority: " << jobs.front().priority << std::endl;
+                } else {
+                    std::cout << "No jobs in queue." << std::endl;
+                }
+                break;
+            }
+            case 3: {
+                processHighestPriorityJob(jobs);
+            }
+            case 4: {
+                std::string name;
+                int priority;
 
+                std::cout << "Enter name of job you want to update: ";
+                std::getline(std::cin, name);
+                std::cout << "Enter new priority: " << std::endl;
+                std::cin >> priority;
+                // std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                updateJobPriority(jobs, name, priority);
+                break;
+            }
+            case 5: {
+                displayJobs(jobs);
+                break;
+            }
+            case 6: {
+                std::cout << "Exiting program..." << std::endl;
+                break;
+            }
+            default:
+                std::cout << "Invalid choice. Try again." << std::endl;
+        }
+    } while (choice != 6);
 
     return 0;
 }

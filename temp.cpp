@@ -6,23 +6,6 @@
 
 
 
-std::unordered_set<std::string> jobNames;
-
-
-
-bool insertNode(std::vector<PrintJob>& jobs, const std::string& name, const int priority) {
-    if (jobNames.find(name) != jobNames.end()) {
-        std::cout << "Error: A job with the name \"" << name << "\" already exists." << std::endl;
-        return false;
-    }
-
-    jobs.emplace_back(name, priority);
-    jobNames.insert(name);
-    heapifyInsertOperation(jobs, static_cast<int>(jobs.size() - 1));
-    return true;
-}
-
-
 
 
 void processHighestPriorityJob(std::vector<PrintJob>& jobs) {
@@ -41,41 +24,7 @@ void processHighestPriorityJob(std::vector<PrintJob>& jobs) {
     heapify(jobs, jobs.size(), 0);
 }
 
-void updateJobPriority(std::vector<PrintJob>& jobs, const std::string& name, int newPriority) {
-    int index = -1;
-    for (int i = 0; i < jobs.size(); ++i) {
-        if (jobs[i].name == name) {
-            index = i;
-            break;
-        }
-    }
 
-    if (index == -1) {
-        std::cout << "Error: No job found with the name \"" << name << "\"." << std::endl;
-        return;
-    }
-
-    int oldPriority = jobs[index].priority;
-    jobs[index].priority = newPriority;
-
-    if (newPriority > oldPriority) {
-        heapifyInsertOperation(jobs, index);
-    } else {
-        heapify(jobs, jobs.size(), index);
-    }
-    std::cout << "Priority of job \"" << name << "\" updated to " << newPriority << "." << std::endl;
-}
-
-void displayMenu() {
-    std::cout << "\nPrint Job Scheduler Menu:\n";
-    std::cout << "1. Insert Print Job\n";
-    std::cout << "2. Display Next Print Job\n";
-    std::cout << "3. Process Next Print Job\n";
-    std::cout << "4. Update Print Job Priority\n";
-    std::cout << "5. Display All Print Jobs\n";
-    std::cout << "6. Exit\n";
-    std::cout << "Enter your choice: ";
-}
 
 int main() {
     std::vector<PrintJob> jobs;
