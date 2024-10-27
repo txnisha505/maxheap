@@ -6,26 +6,6 @@
 
 
 
-
-
-void processHighestPriorityJob(std::vector<PrintJob>& jobs) {
-    if (jobs.empty()) {
-        std::cout << "No jobs to process." << std::endl;
-        return;
-    }
-
-    PrintJob highestPriorityJob = jobs.front();
-    std::cout << "Processing job: " << highestPriorityJob.name << " (Priority: " << highestPriorityJob.priority << ")" << std::endl;
-
-    jobs[0] = jobs.back();
-    jobs.pop_back();
-    jobNames.erase(highestPriorityJob.name);
-
-    heapify(jobs, jobs.size(), 0);
-}
-
-
-
 int main() {
     std::vector<PrintJob> jobs;
     int choice;

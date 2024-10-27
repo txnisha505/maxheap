@@ -15,7 +15,10 @@ struct PrintJob {
 };
 
 
+
+// init an unordered set to ensure unique names and O(1) lookup time
 std::unordered_set<std::string> jobNames;
+
 
 
 // function for restoring max-heap properties on a subtree rooted at i based on priority.
@@ -47,15 +50,15 @@ void heapify(std::vector<PrintJob> &jobs, int n, int parent)  {
 }
 
 
+
 // function for building a heap from an unsorted vector of PrintJob objects
-void buildHeap(std::vector<PrintJob> &jobs, int &n) {
+void buildHeap(std::vector<PrintJob> &jobs, int n) {
 
     // start loop from last non-leaf node, and move towards root
     for(int i = (n - 1) / 2; i >= 0; i--) {
         heapify(jobs, n, i);
     }
 }
-
 
 
 
@@ -77,7 +80,7 @@ void heapifyInsertOperation(std::vector<PrintJob> &jobs, int i) {
 
 
 
-
+// function to insert a node to max-heap
 bool insertNode(std::vector<PrintJob> &jobs, const std::string &name, const int priority) {
     if (jobNames.find(name) != jobNames.end()) {
         std::cout << "Error: A job with the name \"" << name << "\" already exists." << std::endl;
@@ -94,15 +97,33 @@ bool insertNode(std::vector<PrintJob> &jobs, const std::string &name, const int 
 }
 
 
+
+// function to process job with the highest priority, and restore heap properties afterward
 void processHighestPriorityJob(std::vector<PrintJob> &jobs) {
+
     if (jobs.empty()) {
         std::cout << "No jobs to process." << std::endl;
         return;
     }
-
+    // retrieve the highest-priority job
     PrintJob highestPriorityJob = jobs.front();
-    std::cout << "Processing job: " << highestPriorityJob.name << "Priority: " << highestPriorityJob.priority << std::endl;
+    std::cout << "Processing job: " << highestPriorityJob.name <<
+    " (Priority: " << highestPriorityJob.priority << ")" << std::endl;
+
+    // move last job in heap to root position, and delete highestPriorityJob from heap
+    jobs[0] = jobs.back();
+
+    // remove the old last job
+    jobs.pop_back();
+
+    // remove the name of highestPriorityJob, to make room to create a new job with identical name
+    jobNames.erase(highestPriorityJob.name);
+
+    // call heapify on root node to restore max-heap properties.
+    heapify(jobs, static_cast<int>(jobs.size()), 0);
 }
+
+
 
 // function for editing an existing job's priority
 void updateJobPriority(std::vector<PrintJob> &jobs, const std::string &name, int new_priority) {
@@ -133,6 +154,7 @@ void updateJobPriority(std::vector<PrintJob> &jobs, const std::string &name, int
 }
 
 
+
 // function to display jobs
 void displayJobs(std::vector<PrintJob> &jobs) {
     if (jobs.empty()) {
@@ -158,7 +180,7 @@ void heapSort(std::vector<PrintJob> &jobs, int &n) {
 
 
 void displayMenu() {
-    std::cout << "Print Job Program Menu:" << std::endl;
+    std::cout << "\nPrint Job Program Menu:" << std::endl;
     std::cout << "1. Insert print job" << std::endl;
     std::cout << "2. Display next print job" << std::endl;
     std::cout << "3. Process next print job" << std::endl;
@@ -167,16 +189,35 @@ void displayMenu() {
     std::cout << "6. Exit program" << std::endl;
 }
 
+bool isValidInteger(int &number) {
+    std::cin >> number;
+
+    if (std::cin.fail()) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return false;
+    }
+    return true;
+}
 
 
-int main(){
+int main() {
     std::vector<PrintJob> jobs;
     int choice;
 
     do {
         displayMenu();
         std::cin >> choice;
-        // std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+        if (std::cin.fail()) {
+
+            // remove error flag
+            std::cin.clear();
+
+            // clear input until encountering newline char
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Invalid choice." << std::endl;
+        }
 
         switch (choice) {
             case 1: {
@@ -184,18 +225,22 @@ int main(){
                 int priority;
 
                 std::cout << "Enter job name: ";
+                std::cin.ignore();
                 std::getline(std::cin, name);
 
                 std::cout << "Enter job priority: ";
-                std::cin >> priority;
-                // std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+
 
                 if (insertNode(jobs, name, priority)) {
-                    std::cout << "Job \"" << name << "\" succesfully added." << std::endl;
+                    std::cout << "Job \"" << name << "\" successfully added." << std::endl;
+
                     if (!jobs.empty()) {
                         // display next print job with highest priority
                         std::cout << "Next job to process: " << jobs.front().name <<
-                        " Priority: " << jobs.front().priority << std::endl;
+                                  " (Priority: " << jobs.front().priority << ")" << std::endl;
+                    } else {
+                        std::cout << "Print queue is now empty." << std::endl;
                     }
                 }
                 break;
@@ -211,6 +256,7 @@ int main(){
             }
             case 3: {
                 processHighestPriorityJob(jobs);
+                break;
             }
             case 4: {
                 std::string name;
@@ -229,11 +275,11 @@ int main(){
                 break;
             }
             case 6: {
-                std::cout << "Exiting program..." << std::endl;
+                std::cout << "Exiting program." << std::endl;
                 break;
             }
             default:
-                std::cout << "Invalid choice. Try again." << std::endl;
+                std::cout << "Try choosing one of the options 1-6." << std::endl;
         }
     } while (choice != 6);
 
