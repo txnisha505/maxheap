@@ -1,7 +1,8 @@
-#include <iostream>
+#include <iostream>                     // Assignment Group 34
 #include <vector>
-#include <limits> // for std::numeric_limits: provides information about properties of a data type
+#include <limits> // for std::numeric_limits
 #include <unordered_set>
+#include <algorithm> // for std::reverse
 
 
 
@@ -17,6 +18,7 @@ struct PrintJob {
 
 
 // init an unordered set to ensure unique names and O(1) lookup time
+// this set will be used to avoid duplicate print jobs
 std::unordered_set<std::string> jobNames;
 
 
@@ -49,16 +51,6 @@ void heapify(std::vector<PrintJob> &jobs, int n, int parent)  {
     }
 }
 
-
-
-// function for building a heap from an unsorted vector of PrintJob objects
-void buildHeap(std::vector<PrintJob> &jobs, int n) {
-
-    // start loop from last non-leaf node, and move towards root
-    for(int i = (n - 1) / 2; i >= 0; i--) {
-        heapify(jobs, n, i);
-    }
-}
 
 
 
@@ -107,7 +99,7 @@ void processHighestPriorityJob(std::vector<PrintJob> &jobs) {
     }
     // retrieve the highest-priority job
     PrintJob highestPriorityJob = jobs.front();
-    std::cout << "Processing job: " << highestPriorityJob.name <<
+    std::cout << "Printing job: " << highestPriorityJob.name <<
     " (Priority: " << highestPriorityJob.priority << ")" << std::endl;
 
     // move last job in heap to root position, and delete highestPriorityJob from heap
@@ -154,14 +146,36 @@ void updateJobPriority(std::vector<PrintJob> &jobs, const std::string &name, int
 }
 
 
+// function to perform heap sort on the jobs vector.
+void heapSort(std::vector<PrintJob> &jobs, int n) {
+    // loop from last element to first
+    for(int i = n - 1; i >= 0; i--){
+        // swap root node (largest element) with the current unsorted node.
+        // root node is moved to the back of the list and considered sorted
+        std::swap(jobs[i], jobs[0]);
 
-// function to display jobs
+        // call heapify to restore max-heap properties for the remaining unsorted nodes
+        heapify(jobs, i, 0);
+    }
+}
+
+
+
+// function to display jobs in priority order
 void displayJobs(std::vector<PrintJob> &jobs) {
     if (jobs.empty()) {
         std::cout << "There are no jobs." << std::endl;
         return;
     }
-    std::cout << "Current jobs: " << std::endl;
+
+    // since only root node is guaranteed to be sorted
+    // we need to call heapSort to sort the other jobs as well
+    heapSort(jobs, static_cast<int>(jobs.size()));
+
+    // reverse the sorted jobs to display in descending order
+    std::reverse(jobs.begin(), jobs.end());
+
+    std::cout << "\nJobs in priority order (highest to lowest): " << std::endl;
     for(const auto &job : jobs) {
         std::cout << "Job name: " << job.name << ", Job priority: " << job.priority << std::endl;
     }
@@ -169,36 +183,34 @@ void displayJobs(std::vector<PrintJob> &jobs) {
 
 
 
-void heapSort(std::vector<PrintJob> &jobs, int &n) {
-    for(int i = n - 1; i >= 0; i--){
-        std::swap(jobs[i], jobs[0]);
-        heapify(jobs, i, 0);
+// helper function for getting valid integers
+bool getValidInteger(int &number) {
+    std::cin >> number;
+
+    if (std::cin.fail()) {
+        // remove error flag
+        std::cin.clear();
+
+        // clear input until encountering newline char
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        return false;
     }
+    return true;
 }
 
 
 
-
 void displayMenu() {
-    std::cout << "\nPrint Job Program Menu:" << std::endl;
+    std::cout << "\nPrint Job Scheduling System\n" << std::endl;
+    std::cout << "Choose one of the options:" << std::endl;
     std::cout << "1. Insert print job" << std::endl;
-    std::cout << "2. Display next print job" << std::endl;
+    std::cout << "2. Display next print job (print job with highest priority)" << std::endl;
     std::cout << "3. Process next print job" << std::endl;
     std::cout << "4. Update print job priority" << std::endl;
     std::cout << "5. Display all print jobs" << std::endl;
     std::cout << "6. Exit program" << std::endl;
 }
 
-bool isValidInteger(int &number) {
-    std::cin >> number;
-
-    if (std::cin.fail()) {
-        std::cin.clear();
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-        return false;
-    }
-    return true;
-}
 
 
 int main() {
@@ -207,14 +219,13 @@ int main() {
 
     do {
         displayMenu();
+        std::cout << "Your choice: ";
         std::cin >> choice;
 
+        // handle invalid input for choices
         if (std::cin.fail()) {
 
-            // remove error flag
             std::cin.clear();
-
-            // clear input until encountering newline char
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             std::cout << "Invalid choice." << std::endl;
         }
@@ -224,20 +235,26 @@ int main() {
                 std::string name;
                 int priority;
 
-                std::cout << "Enter job name: ";
-                std::cin.ignore();
-                std::getline(std::cin, name);
+                std::cout << "Enter job name (only single words are allowed): ";
+
+                // get name, and clear rest of input
+                std::cin >> name;
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
                 std::cout << "Enter job priority: ";
 
+                // get a valid integer
+                while (!getValidInteger(priority)) {
+                    std::cout << "Invalid input. Please enter a valid integer for priority: ";
+                }
 
-
+                // try to insert node
                 if (insertNode(jobs, name, priority)) {
                     std::cout << "Job \"" << name << "\" successfully added." << std::endl;
 
                     if (!jobs.empty()) {
                         // display next print job with highest priority
-                        std::cout << "Next job to process: " << jobs.front().name <<
+                        std::cout << "Highest priority: " << jobs.front().name <<
                                   " (Priority: " << jobs.front().priority << ")" << std::endl;
                     } else {
                         std::cout << "Print queue is now empty." << std::endl;
@@ -247,8 +264,8 @@ int main() {
             }
             case 2: {
                 if (!jobs.empty()) {
-                    std::cout << "Next job to process: " << jobs.front().name
-                              << " Priority: " << jobs.front().priority << std::endl;
+                    std::cout << jobs.front().name
+                              << " (Priority: " << jobs.front().priority << ")" << std::endl;
                 } else {
                     std::cout << "No jobs in queue." << std::endl;
                 }
@@ -263,11 +280,19 @@ int main() {
                 int priority;
 
                 std::cout << "Enter name of job you want to update: ";
-                std::getline(std::cin, name);
-                std::cout << "Enter new priority: " << std::endl;
-                std::cin >> priority;
-                // std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+                std::cin >> name;
+                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+                std::cout << "Enter new priority: ";
+
+                while (!getValidInteger(priority)) {
+                    std::cout << "Invalid input. Please enter a valid integer for priority: ";
+                }
                 updateJobPriority(jobs, name, priority);
+
+                // display the updated order of the print jobs after priority change
+                displayJobs(jobs);
+
                 break;
             }
             case 5: {
@@ -275,7 +300,7 @@ int main() {
                 break;
             }
             case 6: {
-                std::cout << "Exiting program." << std::endl;
+                std::cout << "Exiting program.." << std::endl;
                 break;
             }
             default:
